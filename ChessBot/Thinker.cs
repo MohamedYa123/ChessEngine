@@ -984,7 +984,15 @@ namespace ChessBot
                     mv.part1 = this;
                     int[] n = { xv, yv };
                     mv.position1 = n;
-                    if ((side==0 && (!nb.squares[xv, yv].ocupiedwhite && !nb.squares[xv, yv].checkedblack)) || (side==1 && !nb.squares[xv, yv].ocupiedblack && !nb.squares[xv, yv].checkedwhite))
+                    bool fok = true;
+                    if (chck != null)
+                    {
+                       // if (!))
+                        {
+                            fok = mv.match_bishop() && mv.match_rook();
+                        }
+                    }
+                    if ((side==0 &&fok&& (!nb.squares[xv, yv].ocupiedwhite && !nb.squares[xv, yv].checkedblack)) || (side==1 &&fok&& !nb.squares[xv, yv].ocupiedblack && !nb.squares[xv, yv].checkedwhite))
                     {
                         if(nb.squares[xv, yv].isocupied())
                         {
@@ -2186,20 +2194,22 @@ namespace ChessBot
         public Piece pchceck;
         public int typecheck = 0;//0 check from a pawn or knight, 1 check from a rock,2 check from a bishop
         public int[] kingposition;
-        bool xmatch=false;
-        bool diagnoalright = false;
+        public bool xmatch=false;
+        public  bool rookmatch = false;
+        public bool diagnoalright = false;
         public void refresh()
         {
             switch (typecheck)
             {
                 case 1:
+                    rookmatch = true;
                     if (positionofcheck[0] == kingposition[0])
                     {
                         xmatch = true;
                     }
                     break;
                 case 2:
-                    if (positionofcheck[0] - kingposition[0] == positionofcheck[1] - kingposition[1])
+                   // if (positionofcheck[0] - kingposition[0] == positionofcheck[1] - kingposition[1])
                     {
                         diagnoalright = true;
                     }
@@ -2219,18 +2229,6 @@ namespace ChessBot
             switch (diagnoalright)
             {
                 case true:
-                   /* fg = pos[0] - kingposition[0] > 0;
-                    fg1 = pos[1] - kingposition[1] > 0;
-                    fg2 = positionofcheck[0] - kingposition[0] > 0;
-                    fg21 = positionofcheck[1] - kingposition[1] > 0;
-                    fg3 = positionofcheck[0] - pos[0] > 0;
-                    fg31 = positionofcheck[1] - pos[1] > 0;
-                    if (fg == fg2 && fg2 == fg3&&fg==fg1&&fg21==fg2&&fg31==fg3)
-                    {
-                        return true;
-                    }
-                    return false;*/
-                case false:
                     fg = pos[0] - kingposition[0] > 0;
                     fg1 = pos[1] - kingposition[1] > 0;
                     fg2 = positionofcheck[0] - kingposition[0] > 0;
@@ -2290,6 +2288,74 @@ namespace ChessBot
         public bool longmove = false;
         public bool promote = false;
         public pieceType promotion;
+        public bool match_bishop()
+        {
+            int[] pos = { part1.x, part1.y };
+            bool fg, fg2, fg3;
+            bool fg1, fg21, fg31;
+            int dx = pos[0] - position1[0];
+            int dy = pos[1] - position1[1];
+            if (!(dx == dy || dx == -dy))
+            {
+                return true;
+            }
+            switch (part1.chck.diagnoalright)
+            {
+                case true:
+                    fg = pos[0] - position1[0] > 0;
+                    fg1 = pos[1] - position1[1] > 0;
+                    fg2 = part1.chck.positionofcheck[0] - position1[0] > 0;
+                    fg21 = part1.chck.positionofcheck[1] - position1[1] > 0;
+                    fg3 = part1.chck.positionofcheck[0] - pos[0] > 0;
+                    fg31 = part1.chck.positionofcheck[1] - pos[1] > 0;
+                    if (fg == fg2 && fg2 == fg3 && fg21 == fg1 && fg31 == fg21)
+                    {
+                        return false;
+                    }
+                    return true;
+            }
+            return true;
+        }
+        public bool match_rook()
+        {
+            if (!part1.chck.rookmatch)
+            {
+                return true;
+            }
+            int[] pos = { part1.x, part1.y };
+            bool fg, fg2, fg3;
+
+            switch (part1.chck.xmatch)
+            {
+                case true:
+                    if (pos[0] != position1[0])
+                    {
+                        return true;
+                    }
+                    fg = pos[1] - position1[1] > 0;
+                    fg2 = part1.chck.positionofcheck[1] - position1[1] > 0;
+                    fg3 = part1.chck.positionofcheck[1] - pos[1] > 0;
+                    if (fg == fg2 && fg2 == fg3)
+                    {
+                        return false;
+                    }
+                    return true;
+                case false:
+                    if (pos[1] != position1[1])
+                    {
+                        return true;
+                    }
+                    fg = pos[0] - position1[0] > 0;
+                    fg2 = part1.chck.positionofcheck[0] - position1[0] > 0;
+                    fg3 = part1.chck.positionofcheck[0] - pos[0] > 0;
+                    if (fg == fg2 && fg2 == fg3)
+                    {
+                        return false;
+                    }
+                    return true;
+            }
+            return true;
+        }
     }
 }
 
