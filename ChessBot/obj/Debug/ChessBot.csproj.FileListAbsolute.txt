@@ -1,0 +1,9 @@
+C:\Users\medo1\source\repos\ChessBot\ChessBot\bin\Debug\ChessBot.exe
+C:\Users\medo1\source\repos\ChessBot\ChessBot\bin\Debug\ChessBot.pdb
+C:\Users\medo1\source\repos\ChessBot\ChessBot\obj\Debug\ChessBot.csproj.AssemblyReference.cache
+C:\Users\medo1\source\repos\ChessBot\ChessBot\obj\Debug\ChessBot.Form1.resources
+C:\Users\medo1\source\repos\ChessBot\ChessBot\obj\Debug\ChessBot.Properties.Resources.resources
+C:\Users\medo1\source\repos\ChessBot\ChessBot\obj\Debug\ChessBot.csproj.GenerateResource.cache
+C:\Users\medo1\source\repos\ChessBot\ChessBot\obj\Debug\ChessBot.csproj.CoreCompileInputs.cache
+C:\Users\medo1\source\repos\ChessBot\ChessBot\obj\Debug\ChessBot.exe
+C:\Users\medo1\source\repos\ChessBot\ChessBot\obj\Debug\ChessBot.pdb
