@@ -2,14 +2,369 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
+
+using System.Windows.Forms;
 
 namespace ChessBot
 {
-    
-    public enum pieceType { King, Queen, Rook, Bishop,knight, Pawn,nullpiece };
+
+    public enum pieceType { King, Queen, Rook, Bishop, knight, Pawn, nullpiece };
     public class Thinker
     {
+        List<board> boards = new List<board>();
+        List<board> boards2 = new List<board>();
+        Dictionary<double, situation> dicts = new Dictionary<double, situation>();
+        List<situation> dictsall = new List<situation>();
+        bool stopit = false;
+        //    List< situation> dictstwo = new List< situation>();
+        // int alldone = 0;
+        bool Irunhere = false;
+        public void runCollectors()
+        {
+            Thread th = new Thread(() => collect());
+            th.Start();
+        }
+        void collect()
+        {
+            while (true)
+            {
+                GC.Collect();
+             //   GC.WaitForPendingFinalizers();
+                Thread.Sleep(100);
+            }
 
+        }
+        public void runallthreads()
+        {
+            Irunhere = true;
+            for(int i = 0; i < 180; i++)
+            {
+
+                Thread th = new Thread(()=>  threadstock());
+                th.Start();
+            }
+            MessageBox.Show("app started !");
+        }
+        public void stopthreads()
+        {
+            stopit = true;
+        }
+        public void calc(situation father, situation stmain, int maxdepth, counter cc, int side, bool dothreads, bool dothreads2)
+        {
+            if (maxdepth < 1 || (father != null && stmain.parent != father))
+            {
+                cc.i++;
+                return;
+            }
+            var l = stmain.getallmoves();
+            counter co = new counter();
+            int i = 0;
+            foreach (var a in l)
+            {
+                if (dothreads2)
+                {
+                    Thread th = new Thread(() => calcsinglmove(stmain, a, co));
+                    th.Start();
+                 /*   container2 ct = new container2();
+                    ct.stm = stmain;
+                    ct.mv = a;
+                    ct.co = co;
+                    addContainer2(ct);*/
+                }
+                else
+                {
+                    calcsinglmove(stmain, a, co);
+                }
+                i++;
+            }
+         //   if (!dothreads2)
+            {
+                while (co.i < i)
+                {
+
+                }
+            }
+            stmain.current = null;
+
+            counter cc2 = new counter();
+            i = 0;
+            if (maxdepth > 1)
+            {
+                foreach (var j in stmain.childs)
+                {
+                    if (dothreads)
+                    {
+                        // Thread th = new Thread(() => calc(stmain, j, maxdepth - 1, cc2, side, dothreads, dothreads2));
+                        // th.Start();
+                        container ct = new container();
+                        ct.father = stmain;
+                        ct.stmain = j;
+                        ct.maxdepth = maxdepth - 1;
+                        ct.cc = cc2;
+                        ct.side = side;
+                        ct.dothreads = dothreads;
+                        ct.dothreads2 = dothreads2;
+                        addContainer(ct);
+                    }
+                    else
+                    {
+                        calc(stmain, j, maxdepth - 1, cc2, side, dothreads, dothreads2);
+                    }
+                    i++;
+                }
+            }
+            if (maxdepth % 2 == 0)
+            {
+                
+            }
+            //    while (cc2.i < i)
+            {
+                switch (maxdepth)
+                {
+                    case 1:
+                        break;
+                    case 2:
+                        break;
+                    case 3:
+                        break;
+                    case 4:
+                        break;
+                    case 5:
+                        break;
+                }
+
+            }
+            cc.i++;
+        }
+        object mylock = new object();
+        bool add_to_dict(situation st, double key)
+        {
+            lock (mylock)
+            {
+                //   if (dicts.ContainsKey(key))
+                {
+                    //     return false;
+                }
+                //  dicts.Add(key, st);
+              //  dictsall.Add(st);
+                return true;
+            }
+        }
+        object lock2 = new object();
+        void add_to_childs(situation stm, situation child)
+        {
+            lock (lock2)
+            {
+                stm.childs.Add(child);
+            }
+        }
+        public void wait()
+        {
+            while (!stopit)
+            {
+               
+                if (!Irunhere && iall == 0 && containers.Count==0 && containers2.Count==0)
+                {
+                     stopit = true;
+                }
+              
+            }
+        }
+        List<container> containers = new List<container>();
+        List<container2> containers2 = new List<container2>();
+        object containerLock = new object();
+        container getfreecontainer()
+        {
+            lock (containerLock)
+            {
+                if (containers.Count > 0)
+                {
+                  //  for (int i = 0; i < containers.Count; i++)
+                    {
+                        var f = containers[0]; //containers.Count - 1
+                        containers.Remove(f);
+                        return f;
+                    }
+                }
+            }
+            return null;
+        }
+        object containerLock2 = new object();
+        container2 GetContainer2()
+        {
+            lock (containerLock2)
+            {
+                if (containers2.Count > 0)
+                {
+                    var f = containers2[containers2.Count - 1];
+                    containers2.RemoveAt(containers2.Count - 1);
+                    return f;
+                }
+            }
+            return null;
+        }
+        object locker2 = new object();
+        void addContainer(container cont)
+        {
+            lock (containerLock)
+            {
+                containers.Add(cont);
+            }
+        }
+        object locker22 = new object();
+        void addContainer2(container2 cont)
+        {
+            lock (locker22)
+            {
+                containers2.Add(cont);
+            }
+        }
+        int iall = 0;
+        object lock1 = new object();
+        void setcounter(int a)
+        {
+            lock (lock1)
+            {
+                iall+=a;
+            }
+        }
+        object stopobj = new object();
+        bool getstop()
+        {
+            lock(stopobj)
+            {
+                return stopit;
+            }
+        }
+         void threadstock()
+        {
+            bool stf = getstop();
+              while (!stf)
+            {
+
+                var j2 = GetContainer2();
+                if (j2 != null)
+                {
+                    setcounter(1);
+                    calcsinglmove(j2.stm, j2.mv, j2.co);
+                    setcounter(-1);
+                    Irunhere = false;
+                    continue;
+                }
+                var j = getfreecontainer();
+                if (j != null)
+                {
+                    setcounter(1);
+                    calc(j.father, j.stmain, j.maxdepth, j.cc, j.side, j.dothreads, j.dothreads2);
+                    setcounter(-1);
+                    Irunhere = false;
+                }
+                else if (!Irunhere && iall==0)
+                {
+                   // stopit = true;
+                }
+                stf = getstop();
+                //Thread.Sleep(1);
+            }
+        }
+        void calcsinglmove(situation stm, move mv, counter co)
+        {
+            var newboard = stm.current.copyme(mv);
+            var m = newboard.copiedmove;
+            //newboard.setsquares();
+            newboard.aply_move(m);
+            situation st = new situation();
+            st.current = newboard;
+            st.parent = stm;
+            st.moveofme = m;
+            st.sidePlayed = 1 - stm.sidePlayed;
+      //      if (dicts.ContainsKey(newboard.key))
+            {
+
+            }
+            newboard.calcKey();
+          /*  if (!add_to_dict(st, newboard.key))
+            {
+                var dt = dicts[newboard.key];
+                add_to_childs(stm, dt);
+                co.i++;
+                return;
+            }*/
+            newboard.putpiecesinsquares();
+            newboard.getchecks();
+            add_to_childs(stm, st);
+            stm.numofmoves++;
+            co.i++;
+            /*      counter cob = new counter();
+                  int i = 0;
+                  foreach(var s in st.getallmoves())
+                  {
+                      i++;
+                  }
+                  while (cob.i < i)
+                  {
+
+                  }
+                  cob.i++;*/
+        }
+    }
+    public class container{
+        public situation father;public situation stmain;public int maxdepth;public counter cc;public int side; public bool dothreads; public bool dothreads2;
+    }
+    public class container2
+    {
+        public situation stm; public move mv; public counter co;
+    }
+    public class counter
+    {
+        public int i = 0;
+        
+    }
+    public class evaluation
+    {
+        public int eval;
+        public bool calculated;
+        public List<evaluation> evalswaiting=new List<evaluation>();
+    }
+    public class situation
+    {
+        public board current;
+        public situation parent;
+        public move moveofme;
+        public List<situation> childs = new List<situation>();
+     //   public move moveofOponnent;
+        public evaluation tevaluation = new evaluation();
+        public int sidePlayed=0;//0,1
+        object locks = new object();
+        int maxmoves=0;
+        int nmv=0;
+        public  int numofmoves {
+            get
+            {
+                return nmv;
+            }
+
+            set {
+
+                lock (locks)
+                {
+                    nmv = value;
+                }
+            } }
+        public List<move> getallmoves()
+        {
+            List<move> moves = new List<move>();
+            foreach(var p in current.pieces)
+            {
+                if (p.side != sidePlayed)
+                {
+                    moves.AddRange(p.getmove());
+                }
+            }
+            maxmoves = moves.Count;
+            return moves;
+        }
     }
     public class board
     {
@@ -18,19 +373,72 @@ namespace ChessBot
         int n = 32;
         int rows = 8;
         int cols = 8;
-        public int key;
-        bool white_to_move = true;
-        int materialcount = 0;
+        public double key;
+        public bool white_to_move = true;
+        double materialcount = 0;
         public bool white_o_o=true;
         public  bool white_o_o_o=true;
         public  bool black_o_o=true;
         public  bool black_o_o_o=true;
-        
-        public board(int numpieces=32)
+        public move copiedmove;
+        public board(int numpieces=32,bool dot=true)
         {
-            pieces = new List<Piece>();
-            setsquares();
-            n = numpieces;
+            if (dot) 
+            {
+                pieces = new List<Piece>();
+                setsquares();
+                n = numpieces;
+            }
+        }
+        public board copyme(move m)
+        {
+            board b = new board(dot : false);
+            b.white_o_o = white_o_o;
+            b.white_o_o_o = white_o_o_o;
+            b.black_o_o = black_o_o;
+            b.black_o_o_o = black_o_o_o;
+            List<Piece> allpieces=new List<Piece>();
+            move mv = new move();
+           // int[] ii = { m.position1[0], m.position1[1] };
+           // int[] ii2 = { m.position2[0], m.position2[1] };
+            mv.position1 =  m.position1;
+            mv.position2 = m.position2;// ii2;
+            mv.promote = m.promote;
+            mv.promotion = m.promotion;
+            mv.itscastle = m.itscastle;
+            mv.longmove = m.longmove;
+            
+            foreach(var p in pieces)
+            {
+                var pp = p.copyme(b);
+                if (pp.x == m.part1.x && pp.y == m.part1.y)
+                {
+                    mv.part1 = pp;
+                }
+                else if(m.part2!=null&& pp.x == m.part2.x && pp.y == m.part2.y)
+                {
+                    mv.part2 = pp;
+                }
+                switch (pp.mytype)
+                {
+                    case pieceType.King:
+                        switch (pp.side)
+                        {
+                            case 0:
+                                b.whiteking = pp;
+                                break;
+                            case 1:
+                                b.blackking = pp;
+                                break;
+                        }
+                        break;
+                }
+                allpieces.Add(pp);
+            }
+            b.pieces = allpieces;
+            b.setsquares();
+            b.copiedmove = mv;
+            return b;
         }
         public void setsquares()
         {
@@ -94,19 +502,32 @@ namespace ChessBot
             squares[mv.part1.x, mv.part1.y].pin = mv.part1;
             squares[mv.part1.x, mv.part1.y].setme();
         }
+        public double getkeyofposition(int x,int y,int side,double vv)
+        {
+            if (side == 0)
+            {
+                return Math.Sqrt(x * y + x +(y+9)*(y+9)+ y*Math.Sqrt(vv));
+            }
+            else
+            {
+                return Math.Sqrt(x * y*2 + (x+9)*(x+9) +y + Math.Sqrt(vv)*3);
+            }
+        }
         public void calcKey()
         {
-            int ans = 0;
+            double ans = 0;
             materialcount = 0;
             foreach(var p in pieces)
             {
-                ans = p.x * 13 + p.y * 17;
-                int vv= p.getvalue();
-                ans += vv;
+                double vv = p.getvalue();
+                var jh = getkeyofposition(p.x,p.y,p.side,vv)*vv;
+                ans += jh ;
+                
+               // ans += vv;
                 materialcount += vv;
                 if (p.side == 1)
                 {
-                    ans += vv*18;
+                 //   ans += vv*1378428;
                     materialcount -= vv * 2;
                 }
                 
@@ -114,6 +535,22 @@ namespace ChessBot
             if (white_to_move)
             {
                 ans += 70;
+            }
+            if (white_o_o)
+            {
+                ans += 324;
+            }
+            if (white_o_o_o)
+            {
+                ans += 6548;
+            }
+            if (black_o_o)
+            {
+                ans += 944348;
+            }
+            if (black_o_o_o)
+            {
+                ans += 5657833;
             }
             key = ans;
         }
@@ -307,6 +744,19 @@ namespace ChessBot
         public int xi { get { return x - 1; } }
         public int yi { get { return x - 1; } }
         public checkrecord chck;
+        public Piece copyme(board bb)
+        {
+            Piece pc = new Piece(mytype,x,y,side);
+          /*  pc.mytype = mytype;
+            pc.x = x;
+            pc.y = y;
+            pc.side = side;*/
+            pc.nb = bb;
+            pc.longmovefirst = longmovefirst;
+            pc.nevermoved = nevermoved;
+            return pc;
+
+        }
         bool acceptance(move mv,Piece king)
         {
             if (king.chck == null || mv.part1.mytype==pieceType.King || mv.part2==king.chck.pchceck)
@@ -316,6 +766,10 @@ namespace ChessBot
                     return false;
                 }
                 return true;
+            }
+            if (king.chck.numpieces > 1)
+            {
+                return false;
             }
             switch (king.chck.typecheck)
             {
@@ -354,7 +808,7 @@ namespace ChessBot
             switch (mytype)
             {
                 case pieceType.King:
-                    ans = 0;
+                    ans = 4;
                     break;
                 case pieceType.Queen:
                     ans = 90;
@@ -1365,11 +1819,11 @@ namespace ChessBot
                 }
                 bool righthandcheck = false;
                 bool lefthandcheck = false;
-                if ((y < 8 && nb.squares[x , y+1].colcheck_b&&!nb.squares[x, y + 1].isocupied()) || (nb.squares[x, y].colcheck_b && nb.squares[x , y + 1].rookc() && nb.squares[x , y + 1].pin.side != side && king.y<y))
+                if ((y < 8 && nb.squares[x , y+1].colcheck_b&&!nb.squares[x, y + 1].isocupied()) || (nb.squares[x, y].colcheck_b && y < 8 && nb.squares[x , y + 1].rookc() && nb.squares[x , y + 1].pin.side != side && king.y<y))
                 {
                     righthandcheck = true;
                 }
-                if ((y > 1 && nb.squares[x , y-1].colcheck_b && !nb.squares[x, y - 1].isocupied()) || (nb.squares[x, y].colcheck_b && nb.squares[x, y - 1].rookc() && nb.squares[x, y - 1].pin.side != side && king.y > y))
+                if ((y > 1 && nb.squares[x , y-1].colcheck_b && !nb.squares[x, y - 1].isocupied()) || (nb.squares[x, y].colcheck_b && y > 1 && nb.squares[x, y - 1].rookc() && nb.squares[x, y - 1].pin.side != side && king.y > y))
                 {
                     lefthandcheck = true;
                 }
@@ -1427,11 +1881,11 @@ namespace ChessBot
                 }
                 bool righthandcheck = false;
                 bool lefthandcheck = false;
-                if ((y < 8 && nb.squares[x, y + 1].colcheck_w && !nb.squares[x, y + 1].isocupied()) || (nb.squares[x, y].colcheck_w && nb.squares[x, y + 1].rookc() && nb.squares[x, y + 1].pin.side != side && king.y < y))
+                if ((y < 8 && nb.squares[x, y + 1].colcheck_w && !nb.squares[x, y + 1].isocupied()) || (nb.squares[x, y].colcheck_w && y < 8 && nb.squares[x, y + 1].rookc() && nb.squares[x, y + 1].pin.side != side && king.y < y))
                 {
                     righthandcheck = true;
                 }
-                if ((y > 1 && nb.squares[x, y - 1].colcheck_w && !nb.squares[x, y - 1].isocupied()) || (nb.squares[x, y].colcheck_w && nb.squares[x, y - 1].rookc() && nb.squares[x, y - 1].pin.side != side && king.y > y))
+                if ((y > 1 && nb.squares[x, y - 1].colcheck_w && !nb.squares[x, y - 1].isocupied()) || (nb.squares[x, y].colcheck_w && y > 1 && nb.squares[x, y - 1].rookc() && nb.squares[x, y - 1].pin.side != side && king.y > y))
                 {
                     lefthandcheck = true;
                 }
@@ -1492,11 +1946,11 @@ namespace ChessBot
                 }
                 bool righthandcheck = false;
                 bool lefthandcheck = false;
-                if ((x < 8 && nb.squares[x + 1, y].rowcheck_b&&!nb.squares[x + 1, y].isocupied()) ||(nb.squares[x, y].rowcheck_b && nb.squares[x+1, y].rookc() && nb.squares[x+1, y].pin.side != side && king.x < x))
+                if ((x < 8 && nb.squares[x + 1, y].rowcheck_b&&!nb.squares[x + 1, y].isocupied()) ||(nb.squares[x, y].rowcheck_b && x < 8&& nb.squares[x+1, y].rookc() && nb.squares[x+1, y].pin.side != side && king.x < x))
                 {
                     righthandcheck = true;
                 }
-                if ((x > 1 && nb.squares[x - 1, y].rowcheck_b && !nb.squares[x - 1, y].isocupied()) || (nb.squares[x, y].rowcheck_b && nb.squares[x - 1, y].rookc() && nb.squares[x - 1, y].pin.side != side && king.x > x))
+                if ((x > 1 && nb.squares[x - 1, y].rowcheck_b && !nb.squares[x - 1, y].isocupied()) || (nb.squares[x, y].rowcheck_b && x > 1&&nb.squares[x - 1, y].rookc() && nb.squares[x - 1, y].pin.side != side && king.x > x))
                 {
                     lefthandcheck = true;
                 }
@@ -1554,11 +2008,11 @@ namespace ChessBot
                 }
                 bool righthandcheck = false;
                 bool lefthandcheck = false;
-                if ((x < 8 && nb.squares[x + 1, y].rowcheck_w && !nb.squares[x + 1, y].isocupied()) ||(nb.squares[x, y].rowcheck_w && nb.squares[x + 1, y].rookc() && nb.squares[x + 1, y].pin.side != side && king.x < x))
+                if ((x < 8 && nb.squares[x + 1, y].rowcheck_w && !nb.squares[x + 1, y].isocupied()) ||(nb.squares[x, y].rowcheck_w && x < 8 && nb.squares[x + 1, y].rookc() && nb.squares[x + 1, y].pin.side != side && king.x < x))
                 {
                     righthandcheck = true;
                 }
-                if ((x > 1 && nb.squares[x - 1, y].rowcheck_w && !nb.squares[x - 1, y].isocupied()) || (nb.squares[x, y].rowcheck_w && nb.squares[x - 1, y].rookc() && nb.squares[x - 1, y].pin.side != side && king.x> x))
+                if ((x > 1 && nb.squares[x - 1, y].rowcheck_w && !nb.squares[x - 1, y].isocupied()) || (nb.squares[x, y].rowcheck_w && x > 1 && nb.squares[x - 1, y].rookc() && nb.squares[x - 1, y].pin.side != side && king.x> x))
                 {
                     lefthandcheck = true;
                 }
@@ -1620,7 +2074,7 @@ namespace ChessBot
                 }
                 bool righthandcheck = false;
                 bool lefthandcheck = false;
-                if ((x < 8 &&y<8 && nb.squares[x + 1, y+1].diagonalcheck_b_r && !nb.squares[x + 1, y + 1].isocupied())|| (nb.squares[x, y].diagonalcheck_b_r&& nb.squares[x+1, y+1].bishopc()&& nb.squares[x + 1, y + 1].pin.side!=side && king.x < x))
+                if ((x < 8 &&y<8 && nb.squares[x + 1, y+1].diagonalcheck_b_r && !nb.squares[x + 1, y + 1].isocupied())|| (nb.squares[x, y].diagonalcheck_b_r&& x < 8 && y < 8 &&nb.squares[x+1, y+1].bishopc()&& nb.squares[x + 1, y + 1].pin.side!=side && king.x < x))
                 {
                     bool dont = false;
                     for (int ix = x - 1, iy = y - 1; ix > 0 && iy > 0; ix--, iy--){
@@ -1638,7 +2092,7 @@ namespace ChessBot
                         righthandcheck = true;
                     }
                 }
-                if ((x > 1 && y>1&& nb.squares[x - 1, y-1].diagonalcheck_b_l&&!nb.squares[x - 1, y - 1].isocupied()) || (nb.squares[x, y].diagonalcheck_b_l && nb.squares[x - 1, y - 1].bishopc() && nb.squares[x - 1, y - 1].pin.side != side && king.x > x))
+                if ((x > 1 && y>1&& nb.squares[x - 1, y-1].diagonalcheck_b_l&&!nb.squares[x - 1, y - 1].isocupied()) || (nb.squares[x, y].diagonalcheck_b_l&& x > 1 && y > 1 && nb.squares[x - 1, y - 1].bishopc() && nb.squares[x - 1, y - 1].pin.side != side && king.x > x))
                 {
                     bool dont = false;
                     for (int ix = x + 1, iy = y + 1; ix <9 && iy <9; ix++, iy++)
@@ -1714,7 +2168,7 @@ namespace ChessBot
                 }
                 bool righthandcheck = false;
                 bool lefthandcheck = false;
-                if ((x < 8 && y < 8 && nb.squares[x + 1, y + 1].diagonalcheck_w_r&& !nb.squares[x + 1, y + 1].isocupied()) ||(nb.squares[x, y].diagonalcheck_w_r && nb.squares[x + 1, y + 1].bishopc() && nb.squares[x + 1, y + 1].pin.side != side && king.x < x))
+                if ((x < 8 && y < 8 && nb.squares[x + 1, y + 1].diagonalcheck_w_r&& !nb.squares[x + 1, y + 1].isocupied()) ||(nb.squares[x, y].diagonalcheck_w_r && x < 8 && y < 8 && nb.squares[x + 1, y + 1].bishopc() && nb.squares[x + 1, y + 1].pin.side != side && king.x < x))
                 {
                     bool dont = false;
                     for (int ix = x - 1, iy = y - 1; ix > 0 && iy > 0; ix--, iy--)
@@ -1733,7 +2187,7 @@ namespace ChessBot
                         righthandcheck = true;
                     }
                 }
-                if ((x > 1 && y > 1 && nb.squares[x - 1, y - 1].diagonalcheck_w_l && !nb.squares[x - 1, y - 1].isocupied())|| (nb.squares[x, y].diagonalcheck_w_l && nb.squares[x - 1, y - 1].bishopc() && nb.squares[x - 1, y - 1].pin.side != side && king.x > x))
+                if ((x > 1 && y > 1 && nb.squares[x - 1, y - 1].diagonalcheck_w_l && !nb.squares[x - 1, y - 1].isocupied())|| (nb.squares[x, y].diagonalcheck_w_l&& x > 1 && y > 1 && nb.squares[x - 1, y - 1].bishopc() && nb.squares[x - 1, y - 1].pin.side != side && king.x > x))
                 {
                     bool dont = false;
                     for (int ix = x + 1, iy = y + 1; ix < 9 && iy < 9; ix++, iy++)
@@ -1812,7 +2266,7 @@ namespace ChessBot
                 }
                 bool righthandcheck = false;
                 bool lefthandcheck = false;
-                if ((x < 8 && y >1 && nb.squares[x + 1, y - 1].diagonalcheck_b_r && !nb.squares[x + 1, y - 1].isocupied()) || (nb.squares[x, y].diagonalcheck_b_r && nb.squares[x + 1, y - 1].bishopc() && nb.squares[x + 1, y - 1].pin.side != side && king.x < x))
+                if ((x < 8 && y >1 && nb.squares[x + 1, y - 1].diagonalcheck_b_r && !nb.squares[x + 1, y - 1].isocupied()) || (nb.squares[x, y].diagonalcheck_b_r && x < 8 && y > 1 && nb.squares[x + 1, y - 1].bishopc() && nb.squares[x + 1, y - 1].pin.side != side && king.x < x))
                 {
                     bool dont = false;
                     for (int ix = x - 1, iy = y + 1; ix >0 && iy < 9; ix--, iy++)
@@ -1832,7 +2286,7 @@ namespace ChessBot
                     }
                     
                 }
-                if ((x > 1 && y < 8 && nb.squares[x - 1, y + 1].diagonalcheck_b_l && !nb.squares[x - 1, y + 1].isocupied())|| (nb.squares[x, y].diagonalcheck_b_l && nb.squares[x - 1, y + 1].bishopc() && nb.squares[x - 1, y + 1].pin.side != side && king.x > x))
+                if ((x > 1 && y < 8 && nb.squares[x - 1, y + 1].diagonalcheck_b_l && !nb.squares[x - 1, y + 1].isocupied())|| (nb.squares[x, y].diagonalcheck_b_l && x > 1 && y < 8 && nb.squares[x - 1, y + 1].bishopc() && nb.squares[x - 1, y + 1].pin.side != side && king.x > x))
                 {
                     bool dont = false;
                     for (int ix = x + 1, iy = y - 1; ix <9 && iy >0; ix++, iy--)
@@ -1907,7 +2361,7 @@ namespace ChessBot
                 }
                 bool righthandcheck = false;
                 bool lefthandcheck = false;
-                if ((x < 8 && y >1 && nb.squares[x + 1, y - 1].diagonalcheck_w_r&&!nb.squares[x + 1, y - 1].isocupied()) || (nb.squares[x, y].diagonalcheck_w_r && nb.squares[x + 1, y - 1].bishopc() && nb.squares[x + 1, y - 1].pin.side != side && king.x < x))
+                if ((x < 8 && y >1 && nb.squares[x + 1, y - 1].diagonalcheck_w_r&&!nb.squares[x + 1, y - 1].isocupied()) || (nb.squares[x, y].diagonalcheck_w_r && x < 8 && y > 1 && nb.squares[x + 1, y - 1].bishopc() && nb.squares[x + 1, y - 1].pin.side != side && king.x < x))
                 {
                     bool dont = false;
                     for (int ix = x - 1, iy = y + 1; ix > 0 && iy < 9; ix--, iy++)
@@ -1926,7 +2380,7 @@ namespace ChessBot
                         righthandcheck = true;
                     }
                 }
-                if ((x > 1 && y <8 && nb.squares[x - 1, y + 1].diagonalcheck_w_l&&!nb.squares[x - 1, y + 1].isocupied()) || (nb.squares[x, y].diagonalcheck_w_l && nb.squares[x - 1, y + 1].bishopc() && nb.squares[x - 1, y + 1].pin.side != side && king.x > x))
+                if ((x > 1 && y <8 && nb.squares[x - 1, y + 1].diagonalcheck_w_l&&!nb.squares[x - 1, y + 1].isocupied()) || (nb.squares[x, y].diagonalcheck_w_l && x > 1 && y < 8 && nb.squares[x - 1, y + 1].bishopc() && nb.squares[x - 1, y + 1].pin.side != side && king.x > x))
                 {
                     bool dont = false;
                     for (int ix = x + 1, iy = y - 1; ix < 9 && iy > 0; ix++, iy--)
@@ -2288,6 +2742,41 @@ namespace ChessBot
         public bool longmove = false;
         public bool promote = false;
         public pieceType promotion;
+        public override string ToString()
+        {
+            string partr = part1.ToString()+" ";
+            string mkv="";
+            switch (position1[0])
+            {
+                case 1:
+                    mkv = "h";
+                    break;
+                case 2:
+                    mkv = "g";
+                    break;
+                case 3:
+                    mkv = "f";
+                    break;
+                case 4:
+                    mkv = "e";
+                    break;
+                case 5:
+                    mkv = "d";
+                    break;
+                case 6:
+                    mkv = "c";
+                    break;
+                case 7:
+                    mkv = "b";
+                    break;
+                case 8:
+                    mkv = "a";
+                    break;
+            }
+            mkv += position1[1]+"";
+
+            return partr+mkv;
+        }
         public bool match_bishop()
         {
             int[] pos = { part1.x, part1.y };

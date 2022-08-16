@@ -79,7 +79,21 @@ namespace ChessBot
         private void button1_Click(object sender, EventArgs e)
         {
             board b = new board(32);
+            
             b.putpieces();
+            Thinker th = new Thinker();
+         //   for (int i = 0; i < 4; i++)
+            {
+                //     th.calc(b, 0);
+                situation stm = new situation();
+                stm.sidePlayed = 1;
+                stm.current = b;
+                  th.runallthreads();
+                th.runCollectors();
+                th.calc(null,stm, 5, new counter(), 0, true, false);
+               th.wait();
+                th.stopthreads();
+            }
             int count = 0;
             
             foreach(var d in allpieces)
@@ -399,7 +413,7 @@ namespace ChessBot
                                             try
                                             {
                                                 Button l = (Button)cc;
-                                                bool notdff = false;
+                                    //            bool notdff = false;
                                                 foreach (var s in m)
                                                 {
                                                     if (s.position1[0] != postxx || s.position1[1] != postyy)
@@ -555,6 +569,11 @@ namespace ChessBot
         {
             flip = !flip;
             button1.PerformClick();
+        }
+
+        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            Application.Exit();
         }
     }
 }
